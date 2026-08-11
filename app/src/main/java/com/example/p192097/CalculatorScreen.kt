@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -61,6 +62,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -381,15 +383,19 @@ private fun DisplayArea(
                     Spacer(Modifier.width(4.dp))
                 }
                 Box(Modifier.weight(1f).fillMaxHeight()) {
+                    val keyboardController = LocalSoftwareKeyboardController.current
                     BasicTextField(
                         value = tfv,
                         onValueChange = onValueChange,
-                        readOnly = true, // 只接受计算器按键触发的赋值，不弹系统键盘、不出选择手柄
                         textStyle = TextStyle(color = TextLight, fontSize = 32.sp, lineHeight = 42.sp),
                         cursorBrush = SolidColor(Yellow),
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(end = 52.dp)
+                            .onFocusChanged {
+                                // 保持可编辑状态以显示光标，但一获得焦点就立刻收起系统键盘
+                                if (it.isFocused) keyboardController?.hide()
+                            }
                     )
                 }
             }
