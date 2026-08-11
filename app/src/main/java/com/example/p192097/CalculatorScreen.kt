@@ -114,7 +114,8 @@ private val DrawerBg: Color get() = if (AppTheme.isLight) DrawerBgLight else Dra
 
 // ---------------- 键盘模式 ----------------
 private enum class KeyboardMode(val label: String) {
-    ARITH("+−×÷"), FUNC("f"), LETTERS("a-z"), CUSTOM("f(x)")
+    ARITH("+−
+                   ×÷"), FUNC("f"), LETTERS("a-z"), CUSTOM("f(x)")
 }
 
 private data class CKey(val label: String, val insert: String? = null, val action: String? = null)
