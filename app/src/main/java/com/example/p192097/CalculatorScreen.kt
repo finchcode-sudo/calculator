@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -365,19 +366,19 @@ private fun DisplayArea(
                 .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
         ) {
             val lineCount = tfv.text.count { it == '\n' } + 1
+            val braceHeightDp = with(LocalDensity.current) { (42.sp.toPx() * lineCount).toDp() }
 
             Row(Modifier.weight(1f).fillMaxWidth()) {
                 if (lineCount > 1) {
-                    // 直接用系统衬线字体自己的 "{" 字形，按行数放大字号，
-                    // 而不是自己手绘曲线，保证形状和最初截图里那个好看的括号完全一致。
-                    Text(
-                        "{",
-                        color = TextLight,
-                        fontSize = (30 * lineCount).sp,
-                        lineHeight = (42 * lineCount).sp,
-                        modifier = Modifier.width(26.dp)
-                    )
-                    Spacer(Modifier.width(2.dp))
+                    // 宽度固定不变，只有高度随行数拉伸，避免"越按越胖/越按越变形"
+                    Canvas(
+                        Modifier
+                            .width(20.dp)
+                            .height(braceHeightDp)
+                    ) {
+                        drawBrace(TextLight)
+                    }
+                    Spacer(Modifier.width(4.dp))
                 }
                 Box(Modifier.weight(1f).fillMaxHeight()) {
                     BasicTextField(
@@ -707,7 +708,30 @@ private fun NavItem(title: String, iconType: String, selected: Boolean, onClick:
 
 // ================= 花括号（多行方程组用，Canvas 单独绘制，随行数自动变高） =================
 
-// (原 drawBrace() 手绘曲线方案已弃用，改为直接使用系统字体的 "{" 字形，见 DisplayArea)
+// ================= 花括号（多行方程组用，Canvas 单独绘制，随行数自动变高） =================
+// 宽度固定，只有高度会变，避免用字号缩放导致的"越来越胖/变形/顶点跑位"问题。
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBrace(color: Color) {
+    val w = size.width
+    val h = size.height
+    val tipX = -w * 0.55f
+    val topCurveEndY = h * 0.12f
+    val bottomCurveStartY = h - h * 0.12f
+    val path = Path().apply {
+        moveTo(w * 0.9f, 0f)
+        cubicTo(w * 0.05f, 0f, w * 0.15f, topCurveEndY * 0.3f, w * 0.15f, topCurveEndY)
+        lineTo(w * 0.15f, h * 0.42f - 8f)
+        cubicTo(w * 0.15f, h * 0.46f, tipX, h * 0.47f, tipX, h * 0.5f)
+        cubicTo(tipX, h * 0.53f, w * 0.15f, h * 0.54f, w * 0.15f, h * 0.58f + 8f)
+        lineTo(w * 0.15f, bottomCurveStartY)
+        cubicTo(w * 0.15f, h - topCurveEndY * 0.3f, w * 0.05f, h, w * 0.9f, h)
+    }
+    drawPath(
+        path,
+        color = color,
+        style = Stroke(width = 2.2.dp.toPx(), cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+    )
+}
 
 
 // ================= 线框图标（Canvas） =================
