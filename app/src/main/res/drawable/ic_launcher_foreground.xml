@@ -4,8 +4,40 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- 计算器机身：圆角深色卡片 -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeColor="#00000000" />
+        android:fillColor="#1E1E23"
+        android:pathData="M32,12 L76,12 A8,8 0 0,1 84,20 L84,88 A8,8 0 0,1 76,96 L32,96 A8,8 0 0,1 24,88 L24,20 A8,8 0 0,1 32,12 Z" />
+
+    <!-- 机身细描边，增加质感 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#33FFFFFF"
+        android:strokeWidth="0.8"
+        android:pathData="M32,12 L76,12 A8,8 0 0,1 84,20 L84,88 A8,8 0 0,1 76,96 L32,96 A8,8 0 0,1 24,88 L24,20 A8,8 0 0,1 32,12 Z" />
+
+    <!-- 显示屏 -->
+    <path
+        android:fillColor="#0C0C10"
+        android:pathData="M32,20 L76,20 L76,40 L32,40 Z" />
+
+    <!-- 显示屏里的光标线，呼应 App 内输入光标 -->
+    <path
+        android:fillColor="#FFC107"
+        android:pathData="M38,26 h2 v12 h-2 z" />
+
+    <!-- 3x3 按键网格，右下角高亮为等号键，呼应主题黄色 -->
+    <path android:fillColor="#2C2C33" android:pathData="M32,46 h12.67 v12 h-12.67 z" />
+    <path android:fillColor="#2C2C33" android:pathData="M47.67,46 h12.67 v12 h-12.67 z" />
+    <path android:fillColor="#2C2C33" android:pathData="M63.33,46 h12.67 v12 h-12.67 z" />
+
+    <path android:fillColor="#2C2C33" android:pathData="M32,61 h12.67 v12 h-12.67 z" />
+    <path android:fillColor="#2C2C33" android:pathData="M47.67,61 h12.67 v12 h-12.67 z" />
+    <path android:fillColor="#2C2C33" android:pathData="M63.33,61 h12.67 v12 h-12.67 z" />
+
+    <path android:fillColor="#2C2C33" android:pathData="M32,76 h12.67 v12 h-12.67 z" />
+    <path android:fillColor="#2C2C33" android:pathData="M47.67,76 h12.67 v12 h-12.67 z" />
+    <path android:fillColor="#FFC107" android:pathData="M63.33,76 h12.67 v12 h-12.67 z" />
+
 </vector>
