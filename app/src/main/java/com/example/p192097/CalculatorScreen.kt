@@ -67,6 +67,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -734,7 +735,7 @@ private fun NavItem(title: String, iconType: String, selected: Boolean, onClick:
         Spacer(Modifier.width(12.dp))
         Box(Modifier.width(30.dp), contentAlignment = Alignment.Center) {
             when (iconType) {
-                "calc" -> Text("+−×÷", color = if (selected) Yellow else Color(0xFFCCCCCC), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                "calc" -> Text("+−\n×÷", color = if (selected) Yellow else Color(0xFFCCCCCC), fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, lineHeight = 13.sp)
                 "f" -> Text("f×", color = if (selected) Yellow else Color(0xFFCCCCCC), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 else -> NavCanvasIcon(iconType, if (selected) Yellow else Color(0xFFCCCCCC))
             }
