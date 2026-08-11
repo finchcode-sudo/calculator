@@ -67,7 +67,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -683,10 +682,10 @@ private fun DrawerContent(onSelect: (String) -> Unit) {
                 Modifier
                     .size(56.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(Color(0xFF2E7D32)),
+                    .background(Color(0xFF1C1C22)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("3.14", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                AppLogoGlyph()
             }
             Row(
                 Modifier.padding(top = 10.dp),
@@ -701,6 +700,25 @@ private fun DrawerContent(onSelect: (String) -> Unit) {
         NAV_ITEMS.forEach { (title, icon) ->
             NavItem(title, icon, selected = title == "计算") { onSelect(title) }
         }
+    }
+}
+
+@Composable
+private fun AppLogoGlyph() {
+    Canvas(Modifier.size(34.dp)) {
+        val s = size.minDimension
+        val w = 2.6.dp.toPx()
+        val st = Stroke(width = w, cap = StrokeCap.Round)
+        // π 顶部横杠
+        drawRoundRect(Color.White, Offset(s * 0.20f, s * 0.24f), Size(s * 0.60f, s * 0.11f), CornerRadius(s * 0.055f))
+        // π 左腿
+        drawRoundRect(Color.White, Offset(s * 0.28f, s * 0.30f), Size(s * 0.12f, s * 0.44f), CornerRadius(s * 0.06f))
+        // π 右腿：直腿 + 向内弯的尾巴
+        drawLine(Color.White, Offset(s * 0.60f, s * 0.30f), Offset(s * 0.60f, s * 0.58f), w, StrokeCap.Round)
+        drawArc(Color.White, startAngle = 90f, sweepAngle = -100f, useCenter = false,
+            topLeft = Offset(s * 0.52f, s * 0.50f), size = Size(s * 0.22f, s * 0.22f), style = st)
+        // 尾端黄色圆点
+        drawCircle(Color(0xFFFFC107), s * 0.09f, Offset(s * 0.735f, s * 0.72f))
     }
 }
 
@@ -735,7 +753,7 @@ private fun NavItem(title: String, iconType: String, selected: Boolean, onClick:
         Spacer(Modifier.width(12.dp))
         Box(Modifier.width(30.dp), contentAlignment = Alignment.Center) {
             when (iconType) {
-                "calc" -> Text("+−\n×÷", color = if (selected) Yellow else Color(0xFFCCCCCC), fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, lineHeight = 13.sp)
+                "calc" -> NavCanvasIcon("calc", if (selected) Yellow else Color(0xFFCCCCCC))
                 "f" -> Text("f×", color = if (selected) Yellow else Color(0xFFCCCCCC), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 else -> NavCanvasIcon(iconType, if (selected) Yellow else Color(0xFFCCCCCC))
             }
@@ -852,6 +870,15 @@ private fun NavCanvasIcon(type: String, color: Color) {
         val w = 1.6.dp.toPx()
         val st = Stroke(width = w, cap = StrokeCap.Round)
         when (type) {
+            "calc" -> {
+                // App 图标风格的 π 符号
+                drawRoundRect(color, Offset(s * 0.20f, s * 0.24f), Size(s * 0.60f, s * 0.12f), CornerRadius(s * 0.06f))
+                drawRoundRect(color, Offset(s * 0.28f, s * 0.30f), Size(s * 0.13f, s * 0.44f), CornerRadius(s * 0.06f))
+                drawLine(color, Offset(s * 0.60f, s * 0.30f), Offset(s * 0.60f, s * 0.58f), w, StrokeCap.Round)
+                drawArc(color, startAngle = 90f, sweepAngle = -100f, useCenter = false,
+                    topLeft = Offset(s * 0.52f, s * 0.50f), size = Size(s * 0.22f, s * 0.22f), style = st)
+                drawCircle(Color(0xFFFFC107), s * 0.075f, Offset(s * 0.735f, s * 0.72f))
+            }
             "fraction" -> {
                 drawRoundRect(color, Offset(s * 0.12f, s * 0.08f), Size(s * 0.76f, s * 0.36f), CornerRadius(s * 0.08f), style = st)
                 drawRoundRect(color, Offset(s * 0.12f, s * 0.56f), Size(s * 0.76f, s * 0.36f), CornerRadius(s * 0.08f), style = st)
