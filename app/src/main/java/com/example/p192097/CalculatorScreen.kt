@@ -40,6 +40,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,7 +52,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -66,6 +66,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
@@ -387,33 +388,41 @@ private fun DisplayArea(
                     Spacer(Modifier.width(4.dp))
                 }
                 Box(Modifier.weight(1f).fillMaxHeight()) {
-                    val keyboardController = LocalSoftwareKeyboardController.current
                     val focusRequester = remember { FocusRequester() }
+                    // 用一个"什么都不做"的假键盘控制器覆盖掉这个输入框能拿到的控制器，
+                    // 不管内部什么时候尝试弹键盘，show() 都是空实现，键盘从根源上就弹不出来，
+                    // 不再依赖"弹出后再手动关掉"这种有时序竞争风险的做法。
+                    val noOpKeyboardController = remember {
+                        object : SoftwareKeyboardController {
+                            override fun show() { /* 永远不弹系统键盘 */ }
+                            override fun hide() { /* 无需处理 */ }
+                        }
+                    }
                     LaunchedEffect(Unit) {
                         // 让输入框一开始就永久拿到焦点，保证光标常亮
                         focusRequester.requestFocus()
                     }
-                    BasicTextField(
-                        value = tfv,
-                        onValueChange = onValueChange,
-                        textStyle = TextStyle(color = TextLight, fontSize = 32.sp, lineHeight = 42.sp),
-                        cursorBrush = SolidColor(Yellow),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(end = 52.dp)
-                            .focusRequester(focusRequester)
-                            .onFocusChanged {
-                                if (it.isFocused) keyboardController?.hide()
-                            }
-                    )
-                    // 透明遮罩：拦截所有点击，触摸事件根本到不了输入框，系统键盘也就没机会弹出
+                    CompositionLocalProvider(LocalSoftwareKeyboardController provides noOpKeyboardController) {
+                        BasicTextField(
+                            value = tfv,
+                            onValueChange = onValueChange,
+                            textStyle = TextStyle(color = TextLight, fontSize = 32.sp, lineHeight = 42.sp),
+                            cursorBrush = SolidColor(Yellow),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(end = 52.dp)
+                                .focusRequester(focusRequester)
+                        )
+                    }
+                    // 透明遮罩：拦截所有点击，避免触发文本选择手柄等其他系统交互
                     Box(
                         Modifier
                             .fillMaxSize()
                             .pointerInput(Unit) {
-                                detectTapGestures { keyboardController?.hide() }
+                                detectTapGestures { }
                             }
                     )
+
                 }
             }
             if (result.isNotEmpty()) {
