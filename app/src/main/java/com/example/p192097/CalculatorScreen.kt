@@ -52,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -362,6 +363,7 @@ private fun DisplayArea(
     showCopyTip: Boolean,
     onCopy: () -> Unit
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
     Box(
         modifier
             .fillMaxWidth()
@@ -407,10 +409,10 @@ private fun DisplayArea(
                             value = tfv,
                             onValueChange = onValueChange,
                             textStyle = TextStyle(color = TextLight, fontSize = 32.sp, lineHeight = 42.sp),
-                            cursorBrush = SolidColor(Yellow),
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(end = 52.dp)
+                            cursorBrush = SolidColor(Yellow),                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(end = 52.dp)
+                        .onFocusChanged { if (it.isFocused) keyboardController?.hide() }
                                 .focusRequester(focusRequester)
                         )
                     }
