@@ -226,14 +226,12 @@ fun CalculatorScreen() {
 
     fun onEnter() {
         vibrate()
+        // 不再往文本里插入 "{" 字符，改为纯换行；
+        // 真正的花括号由 DisplayArea 用 Canvas 单独画出来，随行数自动变高。
         val expr = tfv.text
         val cur = tfv.selection.start
-        val lineStart = expr.lastIndexOf('\n', cur - 1) + 1
-        val lineEnd = expr.indexOf('\n', cur).let { if (it == -1) expr.length else it }
-        val line = expr.substring(lineStart, lineEnd)
-        // 只在行首加左大括号，不再自动补右括号
-        val ne = expr.substring(0, lineStart) + "{" + line + "\n" + expr.substring(lineEnd)
-        tfv = TextFieldValue(ne, TextRange(ne.length))
+        val ne = expr.substring(0, cur) + "\n" + expr.substring(cur)
+        tfv = TextFieldValue(ne, TextRange(cur + 1))
     }
 
     fun clearAll() {
@@ -366,16 +364,32 @@ private fun DisplayArea(
                 .fillMaxSize()
                 .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
         ) {
-            Box(Modifier.weight(1f).fillMaxWidth()) {
-                BasicTextField(
-                    value = tfv,
-                    onValueChange = onValueChange,
-                    textStyle = TextStyle(color = TextLight, fontSize = 32.sp, lineHeight = 42.sp),
-                    cursorBrush = SolidColor(Yellow),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(end = 52.dp)
-                )
+            val lineCount = tfv.text.count { it == '\n' } + 1
+
+            Row(Modifier.weight(1f).fillMaxWidth()) {
+                if (lineCount > 1) {
+                    // 直接用系统衬线字体自己的 "{" 字形，按行数放大字号，
+                    // 而不是自己手绘曲线，保证形状和最初截图里那个好看的括号完全一致。
+                    Text(
+                        "{",
+                        color = TextLight,
+                        fontSize = (30 * lineCount).sp,
+                        lineHeight = (42 * lineCount).sp,
+                        modifier = Modifier.width(26.dp)
+                    )
+                    Spacer(Modifier.width(2.dp))
+                }
+                Box(Modifier.weight(1f).fillMaxHeight()) {
+                    BasicTextField(
+                        value = tfv,
+                        onValueChange = onValueChange,
+                        textStyle = TextStyle(color = TextLight, fontSize = 32.sp, lineHeight = 42.sp),
+                        cursorBrush = SolidColor(Yellow),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(end = 52.dp)
+                    )
+                }
             }
             if (result.isNotEmpty()) {
                 Text(
@@ -690,6 +704,11 @@ private fun NavItem(title: String, iconType: String, selected: Boolean, onClick:
         Text(title, color = if (selected) Yellow else TextLight, fontSize = 15.sp)
     }
 }
+
+// ================= 花括号（多行方程组用，Canvas 单独绘制，随行数自动变高） =================
+
+// (原 drawBrace() 手绘曲线方案已弃用，改为直接使用系统字体的 "{" 字形，见 DisplayArea)
+
 
 // ================= 线框图标（Canvas） =================
 
