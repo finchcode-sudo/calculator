@@ -267,7 +267,6 @@ fun CalculatorScreen() {
                 }
             )
             BottomBar(
-                currentLine = tfv.text.substringAfterLast('\n'),
                 onClear = { clearAll() },
                 onEnter = { onEnter() },
                 onLeft = { moveCursor(-1) },
@@ -397,32 +396,24 @@ private fun DisplayArea(
 
 @Composable
 private fun BottomBar(
-    currentLine: String,
     onClear: () -> Unit,
     onEnter: () -> Unit,
     onLeft: () -> Unit,
     onRight: () -> Unit,
     onBack: () -> Unit
 ) {
+    // 固定只有 5 个图标，均匀分布，不再显示实时算式文本
     Row(
         Modifier
             .fillMaxWidth()
             .height(52.dp)
             .background(BgMain),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         IconButton(onClick = onClear) {
             Icon(Icons.Default.Delete, contentDescription = "清空", tint = TextLight)
         }
-        Text(
-            currentLine,
-            color = TextGray,
-            fontSize = 14.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
         IconButton(onClick = onEnter) { Text("⏎", color = TextLight, fontSize = 20.sp) }
         IconButton(onClick = onLeft) {
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "左移", tint = TextLight)
