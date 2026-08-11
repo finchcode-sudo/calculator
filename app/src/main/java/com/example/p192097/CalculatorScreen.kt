@@ -384,6 +384,7 @@ private fun DisplayArea(
                     BasicTextField(
                         value = tfv,
                         onValueChange = onValueChange,
+                        readOnly = true, // 只接受计算器按键触发的赋值，不弹系统键盘、不出选择手柄
                         textStyle = TextStyle(color = TextLight, fontSize = 32.sp, lineHeight = 42.sp),
                         cursorBrush = SolidColor(Yellow),
                         modifier = Modifier
