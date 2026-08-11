@@ -25,7 +25,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -40,7 +39,6 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,9 +48,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -60,14 +55,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
@@ -363,7 +355,6 @@ private fun DisplayArea(
     showCopyTip: Boolean,
     onCopy: () -> Unit
 ) {
-    val keyboardController = LocalSoftwareKeyboardController.current
     Box(
         modifier
             .fillMaxWidth()
@@ -374,6 +365,7 @@ private fun DisplayArea(
                 .fillMaxSize()
                 .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
         ) {
+            val text = tfv.text
             val lineCount = tfv.text.count { it == '\n' } + 1
             val braceHeightDp = with(LocalDensity.current) { (42.sp.toPx() * lineCount).toDp() }
 
@@ -390,41 +382,52 @@ private fun DisplayArea(
                     Spacer(Modifier.width(4.dp))
                 }
                 Box(Modifier.weight(1f).fillMaxHeight()) {
-                    val focusRequester = remember { FocusRequester() }
-                    // 用一个"什么都不做"的假键盘控制器覆盖掉这个输入框能拿到的控制器，
-                    // 不管内部什么时候尝试弹键盘，show() 都是空实现，键盘从根源上就弹不出来，
-                    // 不再依赖"弹出后再手动关掉"这种有时序竞争风险的做法。
-                    val noOpKeyboardController = remember {
-                        object : SoftwareKeyboardController {
-                            override fun show() { /* 永远不弹系统键盘 */ }
-                            override fun hide() { /* 无需处理 */ }
+                    val lineHeightPx = with(LocalDensity.current) { 42.sp.toPx() }
+                    // 光标闪烁
+                    var cursorOn by remember { mutableStateOf(true) }
+                    LaunchedEffect(Unit) {
+                        while (true) {
+                            delay(500)
+                            cursorOn = !cursorOn
                         }
                     }
-                    LaunchedEffect(Unit) {
-                        // 让输入框一开始就永久拿到焦点，保证光标常亮
-                        focusRequester.requestFocus()
-                    }
-                    CompositionLocalProvider(LocalSoftwareKeyboardController provides noOpKeyboardController) {
-                        BasicTextField(
-                            value = tfv,
-                            onValueChange = onValueChange,
-                            textStyle = TextStyle(color = TextLight, fontSize = 32.sp, lineHeight = 42.sp),
-                            cursorBrush = SolidColor(Yellow),                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(end = 52.dp)
-                        .onFocusChanged { if (it.isFocused) keyboardController?.hide() }
-                                .focusRequester(focusRequester)
-                        )
-                    }
-                    // 透明遮罩：拦截所有点击，避免触发文本选择手柄等其他系统交互
-                    Box(
+                    val sel = tfv.selection.start
+                    // 点击定位：点击第几行，光标就跳到该行行尾
+                    Column(
                         Modifier
                             .fillMaxSize()
-                            .pointerInput(Unit) {
-                                detectTapGestures { }
+                            .pointerInput(text) {
+                                detectTapGestures { pos ->
+                                    val line = (pos.y / lineHeightPx).toInt().coerceAtLeast(0)
+                                    val ls = lineStartOf(text, line)
+                                    val le = text.indexOf('\n', ls).let { if (it < 0) text.length else it }
+                                    onValueChange(tfv.copy(selection = TextRange(le)))
+                                }
                             }
-                    )
-
+                    ) {
+                        val lines = if (text.isEmpty()) listOf("") else text.split("\n")
+                        lines.forEachIndexed { i, line ->
+                            val ls = lineStartOf(text, i)
+                            val le = ls + line.length
+                            val hasCursor = sel in ls..le
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (hasCursor) {
+                                    val prefix = text.substring(ls, minOf(sel, le))
+                                    val suffix = text.substring(minOf(sel, le), le)
+                                    if (prefix.isNotEmpty()) Text(prefix, color = TextLight, fontSize = 32.sp, lineHeight = 42.sp)
+                                    Box(
+                                        Modifier
+                                            .width(2.dp)
+                                            .height(30.dp)
+                                            .background(if (cursorOn) Yellow else Color.Transparent)
+                                    )
+                                    if (suffix.isNotEmpty()) Text(suffix, color = TextLight, fontSize = 32.sp, lineHeight = 42.sp)
+                                } else {
+                                    Text(line, color = TextLight, fontSize = 32.sp, lineHeight = 42.sp)
+                                }
+                            }
+                        }
+                    }
                 }
             }
             if (result.isNotEmpty()) {
@@ -910,6 +913,17 @@ private fun NavCanvasIcon(type: String, color: Color) {
 }
 
 // ================= 工具 =================
+
+private fun lineStartOf(text: String, line: Int): Int {
+    if (line <= 0) return 0
+    var idx = 0
+    var cur = 0
+    while (cur < line && idx < text.length) {
+        if (text[idx] == '\n') cur++
+        idx++
+    }
+    return idx
+}
 
 private fun vibrateDevice(context: Context) {
     try {
