@@ -1,6 +1,5 @@
 package com.example.p192097
 
-import android.app.Activity
 import android.content.Context
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -42,7 +41,6 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -52,8 +50,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -77,13 +78,38 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
-// ---------------- 颜色 ----------------
-private val BgMain = Color(0xFF101014)
-private val BgKeyboard = Color(0xFF141417)
-private val BgKey = Color(0xFF1E1E23)
+// ---------------- 颜色（支持白天/夜间两套主题） ----------------
+// AppTheme.isLight 由顶部工具栏的"亮度/主题"图标切换，
+// 不再调节屏幕真实亮度，而是整体切换深色/浅色配色。
+private object AppTheme {
+    var isLight by mutableStateOf(false)
+}
+
 private val Yellow = Color(0xFFFFC107)
-private val TextGray = Color(0xFF9E9E9E)
-private val TextLight = Color(0xFFE8E8E8)
+
+// 深色主题配色
+private val BgMainDark = Color(0xFF101014)
+private val BgKeyboardDark = Color(0xFF141417)
+private val BgKeyDark = Color(0xFF1E1E23)
+private val TextGrayDark = Color(0xFF9E9E9E)
+private val TextLightDark = Color(0xFFE8E8E8)
+private val DrawerBgDark = Color(0xFF16161A)
+
+// 浅色主题配色
+private val BgMainLight = Color(0xFFF5F5F5)
+private val BgKeyboardLight = Color(0xFFECECEC)
+private val BgKeyLight = Color(0xFFFFFFFF)
+private val TextGrayLight = Color(0xFF757575)
+private val TextLightLight = Color(0xFF1A1A1A)
+private val DrawerBgLight = Color(0xFFFFFFFF)
+
+// 以下作为"当前主题"取值，读取处会随 AppTheme.isLight 的变化自动重组
+private val BgMain: Color get() = if (AppTheme.isLight) BgMainLight else BgMainDark
+private val BgKeyboard: Color get() = if (AppTheme.isLight) BgKeyboardLight else BgKeyboardDark
+private val BgKey: Color get() = if (AppTheme.isLight) BgKeyLight else BgKeyDark
+private val TextGray: Color get() = if (AppTheme.isLight) TextGrayLight else TextGrayDark
+private val TextLight: Color get() = if (AppTheme.isLight) TextLightLight else TextLightDark
+private val DrawerBg: Color get() = if (AppTheme.isLight) DrawerBgLight else DrawerBgDark
 
 // ---------------- 键盘模式 ----------------
 private enum class KeyboardMode(val label: String) {
@@ -142,11 +168,8 @@ fun CalculatorScreen() {
     var tfv by remember { mutableStateOf(TextFieldValue("")) }
     var mode by remember { mutableStateOf(KeyboardMode.ARITH) }
     var vibrateOn by remember { mutableStateOf(true) }
-    var brightIdx by remember { mutableIntStateOf(1) }
     var showCopyTip by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf("") }
-
-    val brightLevels = remember { listOf(0.4f, 0.6f, 0.8f, 1.0f) }
 
     LaunchedEffect(tfv.text) {
         result = Evaluator.evaluate(tfv.text)?.let { formatNumber(it) } ?: ""
@@ -217,10 +240,9 @@ fun CalculatorScreen() {
         tfv = TextFieldValue("")
     }
 
-    fun cycleBrightness() {
-        brightIdx = (brightIdx + 1) % brightLevels.size
-        val act = context as? Activity ?: return
-        act.window.attributes = act.window.attributes.apply { screenBrightness = brightLevels[brightIdx] }
+    fun toggleTheme() {
+        vibrate()
+        AppTheme.isLight = !AppTheme.isLight
     }
 
     ModalNavigationDrawer(
@@ -228,7 +250,7 @@ fun CalculatorScreen() {
         drawerContent = {
             ModalDrawerSheet(
                 modifier = Modifier.fillMaxWidth(0.62f),
-                drawerContainerColor = Color(0xFF16161A),
+                drawerContainerColor = DrawerBg,
                 drawerShape = RoundedCornerShape(0.dp)
             ) {
                 DrawerContent { title ->
@@ -249,7 +271,7 @@ fun CalculatorScreen() {
                 onMenu = { scope.launch { drawerState.open() } },
                 vibrateOn = vibrateOn,
                 onToggleVibrate = { vibrateOn = !vibrateOn },
-                onBrightness = { cycleBrightness() },
+                onToggleTheme = { toggleTheme() },
                 onHistory = { Toast.makeText(context, "历史记录开发中", Toast.LENGTH_SHORT).show() },
                 onGame = { Toast.makeText(context, "趣味游戏开发中", Toast.LENGTH_SHORT).show() }
             )
@@ -290,7 +312,7 @@ private fun TopBar(
     onMenu: () -> Unit,
     vibrateOn: Boolean,
     onToggleVibrate: () -> Unit,
-    onBrightness: () -> Unit,
+    onToggleTheme: () -> Unit,
     onHistory: () -> Unit,
     onGame: () -> Unit
 ) {
@@ -302,19 +324,23 @@ private fun TopBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onMenu) {
-            Icon(Icons.Default.Menu, contentDescription = "菜单", tint = Color.White)
+            Icon(Icons.Default.Menu, contentDescription = "菜单", tint = TextLight)
         }
         Text(
             "计算",
-            color = Color.White,
+            color = TextLight,
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f)
         )
-        IconButton(onClick = onBrightness) { TopIcon("bright", Color.White) }
-        IconButton(onClick = onToggleVibrate) { TopIcon("vibrate", Color.White, dimmed = !vibrateOn) }
-        IconButton(onClick = onHistory) { TopIcon("history", Color.White) }
-        IconButton(onClick = onGame) { TopIcon("game", Color.White) }
+        // 深色主题下显示"太阳"图标（点击切到白天模式）；
+        // 浅色主题下显示"月亮"图标（点击切回夜间模式）。默认夜间。
+        IconButton(onClick = onToggleTheme) {
+            TopIcon(if (AppTheme.isLight) "moon" else "bright", TextLight)
+        }
+        IconButton(onClick = onToggleVibrate) { TopIcon("vibrate", TextLight, dimmed = !vibrateOn) }
+        IconButton(onClick = onHistory) { TopIcon("history", TextLight) }
+        IconButton(onClick = onGame) { TopIcon("game", TextLight) }
     }
 }
 
@@ -343,7 +369,7 @@ private fun DisplayArea(
                 BasicTextField(
                     value = tfv,
                     onValueChange = onValueChange,
-                    textStyle = TextStyle(color = Color.White, fontSize = 32.sp, lineHeight = 42.sp),
+                    textStyle = TextStyle(color = TextLight, fontSize = 32.sp, lineHeight = 42.sp),
                     cursorBrush = SolidColor(Yellow),
                     modifier = Modifier
                         .fillMaxSize()
@@ -469,7 +495,7 @@ private fun ModeRail(selected: KeyboardMode, onSelect: (KeyboardMode) -> Unit) {
             ) {
                 Text(
                     m.label,
-                    color = if (on) Color(0xFF1A1A1A) else Color(0xFFBBBBBB),
+                    color = if (on) Color(0xFF1A1A1A) else TextGray,
                     fontSize = 13.sp,
                     fontWeight = if (on) FontWeight.Bold else FontWeight.Normal
                 )
@@ -515,7 +541,7 @@ private fun KeyButton(k: CKey, modifier: Modifier, onKey: (CKey) -> Unit) {
                 k.label,
                 color = when {
                     isEval -> Color(0xFF1A1A1A)
-                    isNum -> Color.White
+                    isNum -> TextLight
                     else -> Yellow
                 },
                 fontSize = if (isNum) 22.sp else 16.sp,
@@ -590,7 +616,7 @@ private fun DrawerContent(onSelect: (String) -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(Color(0xFF16161A))
+            .background(DrawerBg)
             .verticalScroll(rememberScrollState())
     ) {
         Column(
@@ -685,6 +711,21 @@ private fun TopIcon(type: String, tint: Color, dimmed: Boolean = false) {
                     val y2 = s / 2 + sin(ang).toFloat() * r * 2.5f
                     drawLine(c, Offset(x1, y1), Offset(x2, y2), w, StrokeCap.Round)
                 }
+            }
+            "moon" -> {
+                // 弯月形状：大圆减去偏移的小圆，得到新月轮廓，再描边绘制
+                val r = s * 0.3f
+                val cx = s / 2f
+                val cy = s / 2f
+                val outer = Path().apply {
+                    addOval(Rect(Offset(cx - r, cy - r), Size(r * 2f, r * 2f)))
+                }
+                val offsetX = r * 0.75f
+                val inner = Path().apply {
+                    addOval(Rect(Offset(cx - r + offsetX, cy - r), Size(r * 2f, r * 2f)))
+                }
+                val crescent = Path().apply { op(outer, inner, PathOperation.Difference) }
+                drawPath(crescent, c, style = st)
             }
             "vibrate" -> {
                 val xs = floatArrayOf(0.22f, 0.5f, 0.78f)
