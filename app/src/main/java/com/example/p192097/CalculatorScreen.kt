@@ -231,7 +231,8 @@ fun CalculatorScreen() {
         val lineStart = expr.lastIndexOf('\n', cur - 1) + 1
         val lineEnd = expr.indexOf('\n', cur).let { if (it == -1) expr.length else it }
         val line = expr.substring(lineStart, lineEnd)
-        val ne = expr.substring(0, lineStart) + "{" + line + "}\n" + expr.substring(lineEnd)
+        // 只在行首加左大括号，不再自动补右括号
+        val ne = expr.substring(0, lineStart) + "{" + line + "\n" + expr.substring(lineEnd)
         tfv = TextFieldValue(ne, TextRange(ne.length))
     }
 
