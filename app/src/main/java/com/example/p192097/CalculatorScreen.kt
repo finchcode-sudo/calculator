@@ -278,45 +278,62 @@ fun CalculatorScreen() {
             }
         }
     ) {
-        Column(
+        Box(
             Modifier
                 .fillMaxSize()
-                .background(BgMain)
         ) {
-            TopBar(
-                onMenu = { scope.launch { drawerState.open() } },
-                vibrateOn = vibrateOn,
-                onToggleVibrate = { vibrateOn = !vibrateOn },
-                onToggleTheme = { toggleTheme() },
-                onHistory = { Toast.makeText(context, "历史记录开发中", Toast.LENGTH_SHORT).show() },
-                onGame = { Toast.makeText(context, "趣味游戏开发中", Toast.LENGTH_SHORT).show() }
-            )
-            DisplayArea(
-                modifier = Modifier.weight(1f),
-                tfv = tfv,
-                onValueChange = { tfv = it },
-                result = result,
-                showCopyTip = showCopyTip,
-                onCopy = {
-                    if (tfv.text.isNotEmpty()) {
-                        clipboard.setText(AnnotatedString(tfv.text))
-                        showCopyTip = true
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .background(BgMain)
+            ) {
+                TopBar(
+                    onMenu = { scope.launch { drawerState.open() } },
+                    vibrateOn = vibrateOn,
+                    onToggleVibrate = { vibrateOn = !vibrateOn },
+                    onToggleTheme = { toggleTheme() },
+                    onHistory = { Toast.makeText(context, "历史记录开发中", Toast.LENGTH_SHORT).show() },
+                    onGame = { Toast.makeText(context, "趣味游戏开发中", Toast.LENGTH_SHORT).show() }
+                )
+                DisplayArea(
+                    modifier = Modifier.weight(1f),
+                    tfv = tfv,
+                    onValueChange = { tfv = it },
+                    result = result,
+                    showCopyTip = showCopyTip,
+                    onCopy = {
+                        if (tfv.text.isNotEmpty()) {
+                            clipboard.setText(AnnotatedString(tfv.text))
+                            showCopyTip = true
+                        }
                     }
-                }
-            )
-            BottomBar(
-                onClear = { clearAll() },
-                onEnter = { onEnter() },
-                onLeft = { moveCursor(-1) },
-                onRight = { moveCursor(1) },
-                onBack = { backspace() }
-            )
-            KeyboardArea(
-                modifier = Modifier.weight(1.3f),
-                mode = mode,
-                onModeChange = { mode = it },
-                onKey = { onKey(it) }
-            )
+                )
+                BottomBar(
+                    onClear = { clearAll() },
+                    onEnter = { onEnter() },
+                    onLeft = { moveCursor(-1) },
+                    onRight = { moveCursor(1) },
+                    onBack = { backspace() }
+                )
+                KeyboardArea(
+                    modifier = Modifier.weight(1.3f),
+                    mode = mode,
+                    onModeChange = { mode = it },
+                    onKey = { onKey(it) }
+                )
+            }
+            // 抽屉打开时：点击空白区域（抽屉外）关闭抽屉
+            if (drawerState.isOpen) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures {
+                                scope.launch { drawerState.close() }
+                            }
+                        }
+                )
+            }
         }
     }
 }
