@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
