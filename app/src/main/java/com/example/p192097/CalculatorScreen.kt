@@ -5,7 +5,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
+import android.app.Activity   // ✅ 加上
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -175,7 +175,7 @@ fun CalculatorScreen() {
     var result by remember { mutableStateOf("") }
 
    // 侧滑/返回 双击退出：2 秒内连续滑两次才退出应用
-    val activity = LocalActivity.current
+    val activity = context as? Activity   // ✅ 改成这个
     var lastBackTime by remember { mutableStateOf(0L) }
     BackHandler {
         val now = System.currentTimeMillis()
