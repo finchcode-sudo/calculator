@@ -174,6 +174,19 @@ fun CalculatorScreen() {
     var showCopyTip by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf("") }
 
+   // 侧滑/返回 双击退出：2 秒内连续滑两次才退出应用
+    val activity = LocalActivity.current
+    var lastBackTime by remember { mutableStateOf(0L) }
+    BackHandler {
+        val now = System.currentTimeMillis()
+        if (now - lastBackTime > 2000) {
+            lastBackTime = now
+            Toast.makeText(context, "再滑一次退出应用", Toast.LENGTH_SHORT).show()
+        } else {
+            activity?.finish()
+        }
+    }
+
     LaunchedEffect(tfv.text) {
         result = Evaluator.evaluate(tfv.text)?.let { formatNumber(it) } ?: ""
     }
